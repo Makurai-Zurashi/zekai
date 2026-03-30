@@ -2088,44 +2088,6 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                 com.lagradost.cloudstream3.utils.ZurashiSync.syncHistoryToLocal()
             }
         }
-        // --- ZURASHI SYNC: SILENT REPO INSTALLER ---
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            // Check if we've already done this so we don't install them every single time
-            val reposInstalled = com.lagradost.cloudstream3.CloudStreamApp.getKey<Boolean>("zurashi_repos_installed") ?: false
-
-            if (!reposInstalled) {
-                // We now package them into the new RepositoryData objects with custom names!
-                val prebakedRepos = listOf(
-                    RepositoryData("MegaRepo", "https://raw.githubusercontent.com/self-similarity/MegaRepo/builds/repo.json"),
-                    RepositoryData("Phisher", "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/refs/heads/builds/repo.json"),
-                    RepositoryData(
-                        "Netmirror",
-                        "https://raw.githubusercontent.com/NivinCNC/CNCVerse-Cloud-Stream-Extension/refs/heads/builds/CNC.json"
-                    )
-                )
-
-                var addedNew = false
-
-                // Ask the new RepositoryManager what is currently installed
-                val currentRepos = com.lagradost.cloudstream3.plugins.RepositoryManager.getRepositories()
-
-                for (repo in prebakedRepos) {
-                    // Make sure we don't duplicate them by checking the URLs
-                    if (!currentRepos.any { it.url == repo.url }) {
-                        com.lagradost.cloudstream3.plugins.RepositoryManager.addRepository(repo)
-                        addedNew = true
-                    }
-                }
-
-                if (addedNew) {
-                    // Mark it as done so it never runs again
-                    com.lagradost.cloudstream3.CloudStreamApp.setKey("zurashi_repos_installed", true)
-                    println("ZurashiSync: Pre-baked repositories silently installed!")
-                }
-            }
-        }
-        // -------------------------------------------------------------------------
-
         // Start the download queue
         DownloadQueueManager.init(this)
     }

@@ -1,111 +1,96 @@
-# CloudStream
+# Zekai
 
 **⚠️ Warning: By default, this app doesn't provide any video sources; you have to install extensions to add functionality to the app.**
 
-[![Discord](https://invidget.switchblade.xyz/5Hus6fM)](https://discord.gg/5Hus6fM)
+*Zekai is an unofficial, customized fork of the open-source CloudStream project, featuring a custom, decentralized cross-device sync engine.*
 
+## 📥 Download the App
+**[Download Zekai V1.0 - Launch Edition Here](https://github.com/Makurai-Zurashi/zekai/releases/tag/V1.0)**
 
-## Table of Contents: 
-+ [About Us:](#about_us)
-+ [Installation Steps:](#install_rules)
-+ [Contributing:](#contributing)
-+ [Issues:](#issues)
-  + [Bugs Reports:](#bug_report)
-  + [Enhancement:](#enhancment)
-+ [Extension Development:](#extensions)
-+ [Language Support:](#languages)
-+ [Further Sources](#contact_and_sources)
+---
 
+## Table of Contents:
++ [About Zekai](#about_zekai)
++ [New Features](#features)
++ [Installation](#installation)
++ [How to Setup Zekai Sync](#firebase-setup)
++ [Important Legal & Copyright Note](#legal)
++ [Extensions & Upstream Support](#extensions)
 
-<a id="about_us"></a>
+<a id="about_zekai"></a>
+## About Zekai:
 
-## About us: 
+Zekai takes the powerful, extension-based media engine of CloudStream and supercharges it with real-time cloud synchronization.
 
-**CloudStream is a media center that prioritizes and emphasizes complete freedom and flexibility for users and developers.** 
+Like the original project, Zekai is a media center that prioritizes complete freedom and flexibility for users. It relies on extensions to view videos from publicly available sources, web servers, and platforms like Twitch or YouTube.
 
-CloudStream is an extension-based multimedia player with tracking support. There are extensions to view videos from: 
+<a id="features"></a>
+### Exclusive Zekai Features:
++ **Zekai Sync:** A custom-built, real-time Firebase backend that syncs your watch history, timestamps, and "Continue Watching" cards flawlessly across all your Android devices.
 
-+ [Librevox (audio-books)](https://librivox.org/) 
-+ [Youtube](https://www.youtube.com/)
-+ [Twitch](https://www.twitch.tv/)
-+ [iptv-org (A collection of publicly available IPTV (Internet Protocol television) channels from all over the world.)](https://github.com/iptv-org/iptv) 
-+ [nginx](https://nginx.org/)
-+ And more... 
-
-
-**Please don't create illegal extensions or use any that host any copyrighted media.** For more details about our stance on the DMCA and EUCD, you can read about it on our organization: [reCloudStream](https://github.com/recloudstream)
-
-#### Important Copyright Note: 
-
-Our documentation is unmaintained and open to contributions; therefore, apps and sources, extensions in recommended sources, and recommended apps are not officially moderated or endorsed by CloudStream; if you or another copyright owner identify an extension that breaches your copyright, please let us know. 
-
-
-#### Features:
+### Base Features (Inherited from CloudStream):
 + **AdFree**, No ads whatsoever
 + No tracking/analytics
-+ Bookmarks
++ Bookmarks & Watch History
 + Phone and TV support
-+ Chromecast
++ Chromecast integration
 + Extension system for personal customization
 
+<a id="installation"></a>
+## Installation:
 
-<a id="install_rules"></a>
+> 💡 **Recommended Tip:** Before you download and open the app, scroll down to the **Zekai Sync Setup Guide** below to generate your personal Firebase URL. Having this ready will make your initial app setup much faster!
 
-## Installation: 
+1. Go to our [Releases Page](https://github.com/Makurai-Zurashi/zekai/releases/tag/V1.0).
+2. Download the `Zekai-v1.0.apk` file to your Android device.
+3. Open the file and click "Install" (you may need to allow installations from unknown sources in your Android settings).
+4. *Note: Zekai's auto-updater is currently disabled to prevent accidental overwrites from the upstream CloudStream repository. Check back here for future Zekai updates!*
 
-Our documentation provides the steps to install and configure CloudStream for your streaming needs.
+---
 
-[Getting Started With CloudStream:](https://recloudstream.github.io/csdocs/)
+<a id="firebase-setup"></a>
+## ☁️ How to Setup Zekai Sync (Cross-Device Syncing)
 
-<a id="contributing"></a>
+Zekai uses a custom-built sync engine that allows you to pause an anime on your phone and resume exactly where you left off on another device.
 
-## Contributing:
-We **happily** accept any contributions to our project. To find out where you can start contributing towards the project, please look [at our issues tab](/cloudstream/issues)
+To keep your data 100% private and decentralized, Zekai requires you to use your own free Firebase database. It takes exactly 3 minutes to set up.
 
+### Phase 1: Create Your Project
 
+**Step 1:** Go to the [Firebase Console](https://console.firebase.google.com/) and sign in with your Google account. Click **Create a project**. Type in a name like `zekai-sync` and click Continue.
+*(See image below)*
+`[Drag and drop your Screenshot ...201240.png here]`
 
-<a id="issues"></a> 
- 
-### Issues: 
-While we **actively** accept issues and pull requests, we do require you fill out an [template](https://github.com/recloudstream/cloudstream/issues/new/choose) for issues. These include the following:
+**Step 2:** On the next screen, turn **OFF** Google Analytics. You do not need this for a private sync engine. Click Create Project.
+*(See image below)*
+`[Drag and drop your Screenshot ...201343.png here]`
 
-<a id="bug_report"></a>
+**Step 3:** (Optional) If it asks about AI assistance for Firebase, you can just leave it as is and hit Continue.
+*(See image below)*
+`[Drag and drop your Screenshot ...201330.png here]`
 
-- [Bug Report Template: ](https://github.com/recloudstream/cloudstream/issues/new?assignees=&labels=bug&projects=&template=application-bug.yml)
-  - For bug reports, we want as much info as possible, including your downloaded version of CloudeStream, device and updated version (if possible, current API),
-    expected behavior of the program, and the actual behavior that the program did, most importantly we require clear, reproducible steps of the bug. If your bug can't be       reproduced, it is unlikely we'll work on your issue.
-    
-<a id="enhancment"></a>
-  
-- [Feature Request Template: ](https://github.com/recloudstream/cloudstream/issues/new?assignees=&labels=enhancement&projects=&template=feature-request.yml)
-  - Before adding a feature request, please check to see if a feature request already has been requested.  
+**Step 4:** Wait a few seconds for Firebase to provision your server. Once you see "Your Firebase project is ready", click **Continue**.
+*(See image below)*
+`[Drag and drop your Screenshot ...201426.png here]`
 
+### Phase 2: Create the Database
 
-### Extensions:
- 
-**Further details on creating extensions for CloudStream are found in our documentation.**
+**Step 5:** You are now on your main project dashboard. Look at the left-hand menu. Expand **Databases and storage** and click on **Realtime Database**.
+*(See image below)*
+`[Drag and drop your image_a2ceed.png or ...201123.png here]`
 
-[Guide: For Extension Developers](https://recloudstream.github.io/csdocs/devs/gettingstarted/) 
+**Step 6:** Click the **Create Database** button in the center of the screen.
+* Choose a location closest to you and click **Next**.
+* Select **Start in Test Mode** and click **Enable**.
 
-<a id="contact_and_sources"></a>
+### Phase 3: Update Security Rules (Crucial!)
+*Test mode expires after 30 days, which will break your syncing. Let's fix that so it lasts forever.*
 
-## Further Sources: 
-
-As well as providing clear install steps, our [website](https://dweb.link/ipns/cloudstream.on.fleek.co/) includes a wide variety of other tools, such as: 
-- [Troubleshooting](https://recloudstream.github.io/csdocs/troubleshooting/)
-- [Further CloudStream Repositories](https://recloudstream.github.io/csdocs/repositories/) 
-- Set-Up for other devices, such as:
-  - [Android TV](https://recloudstream.github.io/csdocs/other-devices/tv/)
-  - [Windows](https://recloudstream.github.io/csdocs/other-devices/windows/)
-  - [Linux](https://recloudstream.github.io/csdocs/other-devices/linux/)
-- And more...
-
-<a id="languages"> </a>  
-
-### Supported languages:
-
-Even if you can't contribute to the code or documentation, we always look for those who can contribute to translation and language support. Your contribution is exceptionally appreciated; you can check our translation from the figure below. 
-
-<a href="https://hosted.weblate.org/engage/cloudstream/">
-  <img src="https://hosted.weblate.org/widgets/cloudstream/-/app/multi-auto.svg" alt="Translation status" />
-</a>
+**Step 7:** In your Realtime Database dashboard, click the **Rules** tab at the top. Change the code to look exactly like this:
+```json
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
