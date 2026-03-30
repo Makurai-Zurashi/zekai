@@ -123,6 +123,7 @@ import com.lagradost.cloudstream3.ui.settings.Globals.isLandscape
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.ui.settings.Globals.updateTv
 import com.lagradost.cloudstream3.ui.settings.SettingsGeneral
+import com.lagradost.cloudstream3.ui.settings.extensions.RepositoryData
 import com.lagradost.cloudstream3.ui.setup.HAS_DONE_SETUP_KEY
 import com.lagradost.cloudstream3.ui.setup.SetupFragmentExtensions
 import com.lagradost.cloudstream3.utils.ApkInstaller
@@ -189,6 +190,7 @@ import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.system.exitProcess
 import com.lagradost.cloudstream3.utils.downloader.DownloadQueueManager
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCallback {
     companion object {
@@ -1967,9 +1969,9 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
 
         handleAppIntent(intent)
 
-        ioSafe {
-            runAutoUpdate()
-        }
+//        //ioSafe {
+//            runAutoUpdate()
+//        }
 
         FcastManager().init(this, false)
 
@@ -2036,7 +2038,94 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             updateLocale()
             runDefault()
         }
-        
+        // --- ZEKAI SYNC: NATIVE FIREBASE LOGIN UI & AUTO-PULL ---
+// 1. Check if we already have the Firebase URL saved
+        val isSyncLoggedIn = com.lagradost.cloudstream3.CloudStreamApp.getKey<String>("firebase_db_url") != null
+
+        if (!isSyncLoggedIn) {
+            // 2. Build the native popup for Firebase BYOD
+            runOnUiThread {
+                val layout = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    setPadding(60, 40, 60, 40)
+                }
+
+                val urlBox = android.widget.EditText(this).apply {
+                    hint = "Firebase Database URL (e.g., https://your-app.firebaseio.com)"
+                }
+                val secretBox = android.widget.EditText(this).apply {
+                    hint = "Firebase Database Secret"
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                }
+
+                layout.addView(urlBox)
+                layout.addView(secretBox)
+
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Zekai Sync Setup")
+                    .setMessage("Paste your personal Firebase Realtime DB credentials to enable cloud syncing across your devices.")
+                    .setView(layout)
+                    .setCancelable(false) // This makes it impossible to click outside the box!
+                    .setPositiveButton("Connect") { _, _ ->
+                        // Clean up the inputs just in case the user accidentally copies a trailing slash or space
+                        val dbUrl = urlBox.text.toString().trim().trimEnd('/')
+                        val dbSecret = secretBox.text.toString().trim()
+
+                        // Test the connection via ZurashiSync
+                        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            val success = com.lagradost.cloudstream3.utils.ZurashiSync.authenticateDevice(dbUrl, dbSecret)
+                            if (success) {
+                                // If it works, instantly pull history
+                                com.lagradost.cloudstream3.utils.ZurashiSync.syncHistoryToLocal()
+                            }
+                        }
+                    }
+                    .show()
+            }
+        } else {
+            // 3. They are already logged in! Silently pull their history in the background.
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                com.lagradost.cloudstream3.utils.ZurashiSync.syncHistoryToLocal()
+            }
+        }
+        // --- ZURASHI SYNC: SILENT REPO INSTALLER ---
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            // Check if we've already done this so we don't install them every single time
+            val reposInstalled = com.lagradost.cloudstream3.CloudStreamApp.getKey<Boolean>("zurashi_repos_installed") ?: false
+
+            if (!reposInstalled) {
+                // We now package them into the new RepositoryData objects with custom names!
+                val prebakedRepos = listOf(
+                    RepositoryData("MegaRepo", "https://raw.githubusercontent.com/self-similarity/MegaRepo/builds/repo.json"),
+                    RepositoryData("Phisher", "https://raw.githubusercontent.com/phisher98/cloudstream-extensions-phisher/refs/heads/builds/repo.json"),
+                    RepositoryData(
+                        "Netmirror",
+                        "https://raw.githubusercontent.com/NivinCNC/CNCVerse-Cloud-Stream-Extension/refs/heads/builds/CNC.json"
+                    )
+                )
+
+                var addedNew = false
+
+                // Ask the new RepositoryManager what is currently installed
+                val currentRepos = com.lagradost.cloudstream3.plugins.RepositoryManager.getRepositories()
+
+                for (repo in prebakedRepos) {
+                    // Make sure we don't duplicate them by checking the URLs
+                    if (!currentRepos.any { it.url == repo.url }) {
+                        com.lagradost.cloudstream3.plugins.RepositoryManager.addRepository(repo)
+                        addedNew = true
+                    }
+                }
+
+                if (addedNew) {
+                    // Mark it as done so it never runs again
+                    com.lagradost.cloudstream3.CloudStreamApp.setKey("zurashi_repos_installed", true)
+                    println("ZurashiSync: Pre-baked repositories silently installed!")
+                }
+            }
+        }
+        // -------------------------------------------------------------------------
+
         // Start the download queue
         DownloadQueueManager.init(this)
     }

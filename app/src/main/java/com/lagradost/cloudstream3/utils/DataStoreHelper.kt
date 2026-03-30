@@ -1,6 +1,7 @@
 package com.lagradost.cloudstream3.utils
 
 import android.content.Context
+import com.lagradost.cloudstream3.mvvm.launchSafe
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.APIHolder.unixTimeMS
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.context
@@ -31,6 +32,7 @@ import com.lagradost.cloudstream3.ui.result.ResultEpisode
 import com.lagradost.cloudstream3.ui.result.VideoWatchState
 import com.lagradost.cloudstream3.utils.AppContextUtils.filterProviderByPreferredMedia
 import com.lagradost.cloudstream3.utils.downloader.DownloadObjects
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
 import java.util.GregorianCalendar
@@ -644,16 +646,25 @@ object DataStoreHelper {
 
     fun setViewPos(id: Int?, pos: Long, dur: Long) {
         if (id == null) return
-        if (dur < 30_000) return // too short
+        if (dur < 30_000) return
+
         setKey("$currentAccount/$VIDEO_POS_DUR", id.toString(), PosDur(pos, dur))
+
+        android.util.Log.d("ZekaiSync", "Triggered setViewPos! MediaID: $id | Pos: $pos")
+
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                // Instantly push the math
+                ZurashiSync.pushTimeMath(id.toString(), pos, dur)
+            } catch (e: Exception) {
+                android.util.Log.e("ZekaiSync", "Crash in setViewPos Coroutine: ${e.message}")
+            }
+        }
     }
 
-    /** Sets the position, duration, and resume data of an episode/movie,
-     *
-     * if nextEpisode is not specified it will not be able to set the next episode as resumable if progress > NEXT_WATCH_EPISODE_PERCENTAGE
-     * */
     fun setViewPosAndResume(id: Int?, position: Long, duration: Long, currentEpisode: Any?, nextEpisode: Any?) {
-        setViewPos(id, position, duration)
+        setViewPos(id, position, duration) // <--- This calls the math push above
+
         if (id != null) {
             when (val meta = currentEpisode) {
                 is ResultEpisode -> {
@@ -668,38 +679,42 @@ object DataStoreHelper {
         val nextEp = percentage >= NEXT_WATCH_EPISODE_PERCENTAGE
         val resumeMeta = if (nextEp) nextEpisode else currentEpisode
         if (resumeMeta == null && nextEp) {
-            // remove last watched as it is the last episode and you have watched too much
             when (val newMeta = currentEpisode) {
-                is ResultEpisode -> {
-                    removeLastWatched(newMeta.parentId)
-                }
-
-                is ExtractorUri -> {
-                    removeLastWatched(newMeta.parentId)
-                }
+                is ResultEpisode -> { removeLastWatched(newMeta.parentId) }
+                is ExtractorUri -> { removeLastWatched(newMeta.parentId) }
             }
         } else {
-            // save resume
             when (resumeMeta) {
                 is ResultEpisode -> {
-                    setLastWatched(
-                        resumeMeta.parentId,
-                        resumeMeta.id,
-                        resumeMeta.episode,
-                        resumeMeta.season,
-                        isFromDownload = false
-                    )
+                    setLastWatched(resumeMeta.parentId, resumeMeta.id, resumeMeta.episode, resumeMeta.season, isFromDownload = false)
                 }
-
                 is ExtractorUri -> {
-                    setLastWatched(
-                        resumeMeta.parentId,
-                        resumeMeta.id,
-                        resumeMeta.episode,
-                        resumeMeta.season,
-                        isFromDownload = true
-                    )
+                    setLastWatched(resumeMeta.parentId, resumeMeta.id, resumeMeta.episode, resumeMeta.season, isFromDownload = true)
                 }
+            }
+        }
+
+        // --- ZEKAI SYNC INJECTION: IN-MEMORY METADATA EXTRACTION ---
+        if (id != null) {
+            var title = "Unknown Title"
+            var posterUrl = ""
+            var videoUrl = ""
+            var apiName = "Anichi" // Failsafe default
+
+            if (currentEpisode is ResultEpisode) {
+                title = currentEpisode.name ?: "Episode Watched"
+                posterUrl = currentEpisode.poster ?: ""
+                videoUrl = currentEpisode.data
+                apiName = currentEpisode.apiName // Grab the exact source!
+            }
+
+            android.util.Log.d("ZekaiSync", "Memory Extraction -> Title: $title | Source: $apiName")
+
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    // We must pass the apiName now!
+                    ZurashiSync.pushMetadata(id.toString(), title, posterUrl, videoUrl, apiName)
+                } catch (e: Exception) { }
             }
         }
     }
